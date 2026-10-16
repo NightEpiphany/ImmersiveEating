@@ -7,7 +7,7 @@ import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.HumanoidArm;
 import org.joml.Matrix4f;
 
@@ -32,7 +32,7 @@ public enum ArmModelOffset {
    }
 
    public static ArmModelOffset forPlayer(AbstractClientPlayer player) {
-      return player != null && "slim".equals(player.getSkin().model().id()) ? SLIM : WIDE;
+      return player != null && "slim".equals(player.getSkin().model().getSerializedName()) ? SLIM : WIDE;
    }
 
    public Matrix4f matrixFor(HumanoidArm arm) {
@@ -45,7 +45,7 @@ public enum ArmModelOffset {
          return false;
       }
 
-      ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(player.getMainHandItem().getItem());
+      Identifier itemId = BuiltInRegistries.ITEM.getKey(player.getMainHandItem().getItem());
       return UNIQUE_ITEMS.contains(itemId.toString());
    }
 }

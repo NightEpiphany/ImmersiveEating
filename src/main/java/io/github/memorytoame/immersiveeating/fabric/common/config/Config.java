@@ -1,6 +1,6 @@
 package io.github.memorytoame.immersiveeating.fabric.common.config;
 
-import fuzs.forgeconfigapiport.fabric.api.forge.v4.ForgeConfigRegistry;
+import fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.neoforged.fml.config.ModConfig;
 
@@ -20,7 +20,7 @@ public final class Config {
    }
 
    public static void register() {
-      ForgeConfigRegistry.INSTANCE.register("food", ModConfig.Type.COMMON, COMMON_SPEC, "immersive_eating.toml");
+      ConfigRegistry.INSTANCE.register("food", ModConfig.Type.COMMON, COMMON_SPEC, "immersive_eating.toml");
    }
 }
 

@@ -4,12 +4,12 @@ import java.util.UUID;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.NotNull;
 
 public record AnimationPacket(UUID sessionId) implements CustomPacketPayload {
    public static final Type<AnimationPacket> TYPE = new Type<>(
-      ResourceLocation.fromNamespaceAndPath("food", "animation")
+      Identifier.fromNamespaceAndPath("food", "animation")
    );
    public static final StreamCodec<FriendlyByteBuf, AnimationPacket> STREAM_CODEC = new StreamCodec<>() {
       @Override

@@ -9,7 +9,8 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import net.minecraft.resources.ResourceLocation;
+
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 
@@ -23,7 +24,7 @@ public class SoundJson {
          if (definition.getSounds() != null) {
             for (String sound_namespace : definition.getSounds().values()) {
                if (sound_namespace != null && !sound_namespace.isBlank()) {
-                  ResourceLocation soundId = ResourceLocation.parse(sound_namespace);
+                  Identifier soundId = Identifier.parse(sound_namespace);
                   String name = soundId.getPath();
                   addSound(root, name, soundId.toString());
                }
@@ -36,13 +37,13 @@ public class SoundJson {
 
    public static JsonObject generate(ResourceManager resourceManager) {
       List<FoodDefinition> definitions = new ArrayList<>();
-      Map<ResourceLocation, Resource> resources = resourceManager.listResources(
+      Map<Identifier, Resource> resources = resourceManager.listResources(
          "definitions", location -> location.getNamespace().equals("food") && location.getPath().endsWith(".json")
       );
 
       for (Resource resource : resources.values()) {
          try (Reader reader = resource.openAsReader()) {
-            FoodDefinition definition = (FoodDefinition)GSON.fromJson(reader, FoodDefinition.class);
+            FoodDefinition definition = GSON.fromJson(reader, FoodDefinition.class);
             if (definition != null) {
                definitions.add(definition);
             }

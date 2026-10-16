@@ -4,23 +4,23 @@ import java.util.UUID;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.NotNull;
 
-public record StopSoundPacket(UUID sessionId, ResourceLocation soundId) implements CustomPacketPayload {
+public record StopSoundPacket(UUID sessionId, Identifier soundId) implements CustomPacketPayload {
    public static final Type<StopSoundPacket> TYPE = new Type<>(
-      ResourceLocation.fromNamespaceAndPath("food", "stop_sound")
+           Identifier.fromNamespaceAndPath("food", "stop_sound")
    );
    public static final StreamCodec<FriendlyByteBuf, StopSoundPacket> STREAM_CODEC = new StreamCodec<>() {
       @Override
       public @NotNull StopSoundPacket decode(FriendlyByteBuf buf) {
-         return new StopSoundPacket(buf.readUUID(), buf.readResourceLocation());
+         return new StopSoundPacket(buf.readUUID(), buf.readIdentifier());
       }
 
       @Override
       public void encode(FriendlyByteBuf buf, StopSoundPacket packet) {
          buf.writeUUID(packet.sessionId());
-         buf.writeResourceLocation(packet.soundId());
+         buf.writeIdentifier(packet.soundId());
       }
    };
 

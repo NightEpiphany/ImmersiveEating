@@ -3,10 +3,11 @@ package io.github.memorytoame.immersiveeating.fabric.server;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
+import com.geckolib.animatable.GeoItem;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
-import software.bernie.geckolib.animatable.GeoItem;
 
 public final class ServerAnimationManager {
    private static final Map<UUID, ServerAnimationManager.AnimationState> ACTIVE_ANIMATIONS = new HashMap<>(16);

@@ -12,7 +12,7 @@ public final class CommandEvents {
 
    public static void register() {
       CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
-         dispatcher.register(Commands.literal("immeat").requires(source -> source.hasPermission(2))
+         dispatcher.register(Commands.literal("immeat").requires(Commands.hasPermission(Commands.LEVEL_MODERATORS))
             .then(Commands.literal("config")
                .then(Commands.literal("enableRightClickAnimation")
                   .then(Commands.argument("value", BoolArgumentType.bool()).executes(context -> {

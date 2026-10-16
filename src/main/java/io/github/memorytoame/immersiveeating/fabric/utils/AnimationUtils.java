@@ -1,5 +1,6 @@
 package io.github.memorytoame.immersiveeating.fabric.utils;
 
+import com.geckolib.animatable.GeoItem;
 import io.github.memorytoame.immersiveeating.fabric.client.ClientSoundHandler;
 import io.github.memorytoame.immersiveeating.fabric.client.animation.AnimationResourceChecker;
 import io.github.memorytoame.immersiveeating.fabric.client.animation.CameraRotationComposer;
@@ -7,12 +8,11 @@ import io.github.memorytoame.immersiveeating.fabric.client.animation.ClientAnima
 import io.github.memorytoame.immersiveeating.fabric.client.network.ClientNetwork;
 import io.github.memorytoame.immersiveeating.fabric.common.content.definition.FoodDefinitionManager;
 import io.github.memorytoame.immersiveeating.fabric.common.content.item.Empty;
-import io.github.memorytoame.immersiveeating.fabric.client.mixin.accessor.ItemInHandRendererAccessor;
 import java.util.UUID;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.state.level.FirstPersonHandsAndItemsRenderState;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
-import software.bernie.geckolib.animatable.GeoItem;
 
 public class AnimationUtils {
    private static UUID animationSessionId;
@@ -52,7 +52,7 @@ public class AnimationUtils {
 
    public static void activateAnimationLock(Minecraft mc) {
       if (mc.player != null && !isAnimationLocked()) {
-         lockedHotbarSlot = mc.player.getInventory().selected;
+         lockedHotbarSlot = mc.player.getInventory().getSelectedSlot();
          temp = mc.player.getMainHandItem().copy();
       }
    }
@@ -170,10 +170,10 @@ public class AnimationUtils {
             Empty.triggerClientAnimation(stack, "switchin");
          }
 
-         ItemInHandRendererAccessor renderer = (ItemInHandRendererAccessor)mc.gameRenderer.itemInHandRenderer;
+         FirstPersonHandsAndItemsRenderState renderer = mc.gameRenderer.gameRenderState().levelRenderState.playerRenderState.firstPersonHandsAndItems;
          ItemStack fakeStack = stack.copy();
          fakeStack.setCount(stack.getCount() + 1);
-         renderer.setMainHandItem(fakeStack);
+         renderer.mainHandItem = fakeStack;
          customUseReequipHandled = true;
       }
    }

@@ -11,18 +11,18 @@ import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance.Attenuation;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 
 @Environment(EnvType.CLIENT)
 public final class ClientSoundHandler {
-   private static final Set<ResourceLocation> activeSoundIds = new HashSet<>(16);
+   private static final Set<Identifier> activeSoundIds = new HashSet<>(16);
 
    private ClientSoundHandler() {
    }
 
-   public static void playLocal(ResourceLocation soundId) {
+   public static void playLocal(Identifier soundId) {
       if (soundId != null) {
          Minecraft minecraft = Minecraft.getInstance();
          activeSoundIds.add(soundId);
@@ -38,7 +38,7 @@ public final class ClientSoundHandler {
    private static void stopTrackedSounds() {
       Minecraft minecraft = Minecraft.getInstance();
 
-      for (ResourceLocation soundId : activeSoundIds) {
+      for (Identifier soundId : activeSoundIds) {
          minecraft.getSoundManager().stop(soundId, SoundSource.PLAYERS);
       }
 

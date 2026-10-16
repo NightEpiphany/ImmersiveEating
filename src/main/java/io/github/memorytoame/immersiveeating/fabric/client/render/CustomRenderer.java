@@ -1,5 +1,15 @@
 package io.github.memorytoame.immersiveeating.fabric.client.render;
 
+import com.geckolib.animatable.GeoItem;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.cache.model.GeoBone;
+import com.geckolib.cache.model.GeoQuad;
+import com.geckolib.cache.model.GeoVertex;
+import com.geckolib.cache.model.cuboid.GeoCube;
+import com.geckolib.model.GeoModel;
+import com.geckolib.renderer.GeoItemRenderer;
+import com.geckolib.renderer.base.GeoRenderState;
+import com.geckolib.util.RenderUtil;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import io.github.memorytoame.immersiveeating.fabric.client.animation.CameraRotationComposer;
@@ -18,9 +28,8 @@ import java.util.Map;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
@@ -28,15 +37,7 @@ import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
-import software.bernie.geckolib.animatable.GeoItem;
-import software.bernie.geckolib.animation.AnimationController;
-import software.bernie.geckolib.cache.object.GeoBone;
-import software.bernie.geckolib.cache.object.GeoCube;
-import software.bernie.geckolib.cache.object.GeoQuad;
-import software.bernie.geckolib.cache.object.GeoVertex;
-import software.bernie.geckolib.model.GeoModel;
-import software.bernie.geckolib.renderer.GeoItemRenderer;
-import software.bernie.geckolib.util.RenderUtil;
+import org.jspecify.annotations.NonNull;
 
 @Environment(EnvType.CLIENT)
 public class CustomRenderer extends GeoItemRenderer<Empty> {
@@ -157,7 +158,7 @@ public class CustomRenderer extends GeoItemRenderer<Empty> {
    }
 
    private static void addMirroredVertex(
-      GeoVertex vertex, Matrix4f poseMatrix, Vector3f normal, VertexConsumer buffer, int packedLight, int packedOverlay, int colour
+           GeoVertex vertex, Matrix4f poseMatrix, Vector3f normal, VertexConsumer buffer, int packedLight, int packedOverlay, int colour
    ) {
       Vector4f position = poseMatrix.transform(new Vector4f(vertex.position().x(), vertex.position().y(), vertex.position().z(), 1.0F));
       buffer.addVertex(
@@ -165,17 +166,17 @@ public class CustomRenderer extends GeoItemRenderer<Empty> {
       );
    }
 
-   public RenderType getRenderType(Empty animatable, ResourceLocation texture, @Nullable MultiBufferSource bufferSource, float partialTick) {
+   public RenderType getRenderType(Empty animatable, Identifier texture, @Nullable MultiBufferSource bufferSource, float partialTick) {
       return RenderType.entityTranslucentCull(texture);
    }
 
    private static String getModelId(String id) {
-      ResourceLocation resourceLocation = ResourceLocation.tryParse(id);
+      Identifier resourceLocation = Identifier.tryParse(id);
       return resourceLocation == null ? id : resourceLocation.getPath();
    }
 
    private static String getItemId(String id) {
-      ResourceLocation resourceLocation = ResourceLocation.tryParse(id);
+      Identifier resourceLocation = Identifier.tryParse(id);
       return resourceLocation == null ? id : resourceLocation.toString();
    }
 
@@ -233,16 +234,19 @@ public class CustomRenderer extends GeoItemRenderer<Empty> {
          this.id = id;
       }
 
-      public ResourceLocation getModelResource(Empty animatable) {
-         return ResourceLocation.fromNamespaceAndPath("food", "geo/" + this.id + ".geo.json");
+      @Override
+      public @NonNull Identifier getModelResource(@NonNull GeoRenderState renderState) {
+         return Identifier.fromNamespaceAndPath("food", "geo/" + this.id + ".geo.json");
       }
 
-      public ResourceLocation getTextureResource(Empty animatable) {
-         return ResourceLocation.fromNamespaceAndPath("food", "textures/item/" + this.id + ".png");
+      @Override
+      public @NonNull Identifier getTextureResource(@NonNull GeoRenderState renderState) {
+         return Identifier.fromNamespaceAndPath("food", "textures/item/" + this.id + ".png");
       }
 
-      public ResourceLocation getAnimationResource(Empty animatable) {
-         return ResourceLocation.fromNamespaceAndPath("food", "animations/" + this.id + ".animation.json");
+      @Override
+      public @NonNull Identifier getAnimationResource(@NonNull Empty animatable) {
+         return Identifier.fromNamespaceAndPath("food", "animations/" + this.id + ".animation.json");
       }
    }
 }

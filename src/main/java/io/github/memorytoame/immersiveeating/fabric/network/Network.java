@@ -1,5 +1,8 @@
 package io.github.memorytoame.immersiveeating.fabric.network;
 
+import com.geckolib.animatable.GeoAnimatable;
+import com.geckolib.animatable.GeoItem;
+import com.geckolib.animation.AnimationController;
 import io.github.memorytoame.immersiveeating.fabric.init.ModItems;
 import io.github.memorytoame.immersiveeating.fabric.network.packet.AnimationPacket;
 import io.github.memorytoame.immersiveeating.fabric.network.packet.CustomUsingPacket;
@@ -14,15 +17,12 @@ import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import software.bernie.geckolib.animatable.GeoAnimatable;
-import software.bernie.geckolib.animatable.GeoItem;
-import software.bernie.geckolib.animation.AnimationController;
 
 public final class Network {
    private static boolean registered;
@@ -35,11 +35,11 @@ public final class Network {
          return;
       }
       registered = true;
-      PayloadTypeRegistry.playC2S().register(AnimationPacket.TYPE, AnimationPacket.STREAM_CODEC);
-      PayloadTypeRegistry.playC2S().register(FinishUsePacket.TYPE, FinishUsePacket.STREAM_CODEC);
-      PayloadTypeRegistry.playC2S().register(CustomUsingPacket.TYPE, CustomUsingPacket.STREAM_CODEC);
-      PayloadTypeRegistry.playC2S().register(StopAnimationPacket.TYPE, StopAnimationPacket.STREAM_CODEC);
-      PayloadTypeRegistry.playS2C().register(StopSoundPacket.TYPE, StopSoundPacket.STREAM_CODEC);
+      PayloadTypeRegistry.serverboundPlay().register(AnimationPacket.TYPE, AnimationPacket.STREAM_CODEC);
+      PayloadTypeRegistry.serverboundPlay().register(FinishUsePacket.TYPE, FinishUsePacket.STREAM_CODEC);
+      PayloadTypeRegistry.serverboundPlay().register(CustomUsingPacket.TYPE, CustomUsingPacket.STREAM_CODEC);
+      PayloadTypeRegistry.serverboundPlay().register(StopAnimationPacket.TYPE, StopAnimationPacket.STREAM_CODEC);
+      PayloadTypeRegistry.serverboundPlay().register(StopSoundPacket.TYPE, StopSoundPacket.STREAM_CODEC);
 
       ServerPlayNetworking.registerGlobalReceiver(AnimationPacket.TYPE, (packet, context) -> {
          ServerPlayer player = context.player();
@@ -49,14 +49,14 @@ public final class Network {
          context.server().execute(() -> finishUse(context.player(), packet.hand(), packet.sessionId()))
       );
       ServerPlayNetworking.registerGlobalReceiver(CustomUsingPacket.TYPE, (packet, context) ->
-         context.server().execute(() -> customUsing(context.player(), packet.hand(), packet.customItem(), packet.count()))
+         context.server().execute(() -> customUsing(context.player(), packet.customItem(), packet.count()))
       );
       ServerPlayNetworking.registerGlobalReceiver(StopAnimationPacket.TYPE, (packet, context) ->
          context.server().execute(() -> stopAnimation(context.player(), packet.sessionId()))
       );
    }
 
-   public static void sendStopSound(ServerPlayer player, UUID sessionId, ResourceLocation soundId) {
+   public static void sendStopSound(ServerPlayer player, UUID sessionId, Identifier soundId) {
       ServerPlayNetworking.send(player, new StopSoundPacket(sessionId, soundId));
    }
 
@@ -68,7 +68,7 @@ public final class Network {
       if (stack.isEmpty() || stack.is(ModItems.EMPTY) || !FoodDefinitionManager.init_ItemList.contains(stack.getItem())) {
          return;
       }
-      long id = GeoItem.getOrAssignId(stack, player.serverLevel());
+      long id = GeoItem.getOrAssignId(stack, player.level());
       AnimationController<GeoAnimatable> controller = ModItems.EMPTY.getAnimatableInstanceCache()
          .getManagerForId(id).getAnimationControllers().get("eat");
       if ((controller == null || !controller.isPlayingTriggeredAnimation())
@@ -93,7 +93,7 @@ public final class Network {
          return;
       }
       ItemStack stack = player.getItemInHand(hand);
-      ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(stack.getItem());
+      Identifier itemId = BuiltInRegistries.ITEM.getKey(stack.getItem());
       if (UniqueItem.UNIQUE_ITEM_MAP.containsKey(itemId)) {
          stack.shrink(1);
          player.setItemInHand(hand, stack);
@@ -104,7 +104,7 @@ public final class Network {
       ServerAnimationManager.clear(player);
    }
 
-   private static void customUsing(ServerPlayer player, InteractionHand hand, Item item, int count) {
+   private static void customUsing(ServerPlayer player, Item item, int count) {
       if (player == null || item == null || item == Items.AIR) {
          return;
       }

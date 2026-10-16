@@ -1,5 +1,6 @@
 package io.github.memorytoame.immersiveeating.fabric.client;
 
+import io.github.memorytoame.immersiveeating.fabric.KaleidoscopeImmersiveEating;
 import io.github.memorytoame.immersiveeating.fabric.client.animation.CameraShake;
 import io.github.memorytoame.immersiveeating.fabric.client.network.ClientNetwork;
 import io.github.memorytoame.immersiveeating.fabric.common.content.definition.FoodDefinitionManager;
@@ -9,6 +10,7 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
+import net.fabricmc.fabric.api.resource.v1.ResourceLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.world.item.ItemStack;
@@ -42,7 +44,7 @@ public final class ClientSetup {
          (hand, item) -> ClientNetwork.sendCustomUsing(hand, item, 1),
          ClientNetwork::sendFinishUse
       );
-      ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(new FoodDefinitionManager());
+      ResourceLoader.get(PackType.CLIENT_RESOURCES).registerReloadListener(KaleidoscopeImmersiveEating.id("food_definition"), new FoodDefinitionManager());
       ClientTickEvents.END_CLIENT_TICK.register(CameraShake::tickClient);
    }
 }
