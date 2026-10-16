@@ -1,5 +1,12 @@
 package io.github.memorytoame.immersiveeating.fabric.common.content.item;
 
+import com.geckolib.animatable.GeoItem;
+import com.geckolib.animatable.instance.AnimatableInstanceCache;
+import com.geckolib.animatable.manager.AnimatableManager;
+import com.geckolib.animation.AnimationController;
+import com.geckolib.animation.RawAnimation;
+import com.geckolib.animation.object.PlayState;
+import com.geckolib.util.GeckoLibUtil;
 import io.github.memorytoame.immersiveeating.fabric.common.content.definition.FoodDefinitionManager;
 import io.github.memorytoame.immersiveeating.fabric.init.ModItems;
 import io.github.memorytoame.immersiveeating.fabric.unique.UniqueItem;
@@ -10,17 +17,11 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import software.bernie.geckolib.animatable.GeoItem;
-import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animation.AnimationController;
-import software.bernie.geckolib.animation.PlayState;
-import software.bernie.geckolib.animation.RawAnimation;
-import software.bernie.geckolib.animation.AnimatableManager.ControllerRegistrar;
-import software.bernie.geckolib.util.GeckoLibUtil;
+import org.jspecify.annotations.NonNull;
 
 public class Empty extends Item implements GeoItem {
    private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
@@ -31,7 +32,7 @@ public class Empty extends Item implements GeoItem {
    private static Supplier<Item> clientGetMainHandItem = () -> null;
    private static Supplier<UUID> clientAnimationSessionSupplier = () -> null;
    private static Supplier<Long> clientAnimationControllerSupplier = () -> Long.MAX_VALUE;
-   private static Consumer<ResourceLocation> clientSoundHandler = ignored -> {};
+   private static Consumer<Identifier> clientSoundHandler = ignored -> {};
    private static Runnable clientSoundStopHandler = () -> {};
    private static BiConsumer<InteractionHand, Item> clientCustomUseHandler = (ignoredHand, ignoredItem) -> {};
    private static BiConsumer<InteractionHand, UUID> clientFinishUseHandler = (ignoredHand, ignoredSession) -> {};
@@ -61,7 +62,7 @@ public class Empty extends Item implements GeoItem {
       clientAnimationControllerSupplier = animationControllerSupplier;
    }
 
-   public static void setClientSoundHooks(Consumer<ResourceLocation> soundHandler, Runnable soundStopHandler) {
+   public static void setClientSoundHooks(Consumer<Identifier> soundHandler, Runnable soundStopHandler) {
       clientSoundHandler = soundHandler;
       clientSoundStopHandler = soundStopHandler;
    }
@@ -82,7 +83,7 @@ public class Empty extends Item implements GeoItem {
          .getAnimationControllers()
          .get("eat");
       if (controller != null) {
-         controller.stop();
+         controller.stopTriggeredAnimation();
       }
    }
 
@@ -114,14 +115,14 @@ public class Empty extends Item implements GeoItem {
             .get(controllerName);
          if (controller != null) {
             clientSoundStopHandler.run();
-            controller.forceAnimationReset();
-            controller.tryTriggerAnimation(controllerName);
+            controller.reset();
+            controller.triggerAnimation(controllerName);
          }
       }
    }
 
    @Override
-   public void registerControllers(ControllerRegistrar controllers) {
+   public void registerControllers(AnimatableManager.@NonNull ControllerRegistrar controllers) {
       this.reg_controllers.add(this.createControl("eat"));
       this.reg_controllers.add(this.createControl("switchin"));
       this.reg_controllers.add(this.createControl("switchout"));
@@ -131,17 +132,17 @@ public class Empty extends Item implements GeoItem {
             keyFrames -> {
                ItemStack animationStack = clientAnimationStackSupplier.get();
                if (animationStack != null && !animationStack.isEmpty()) {
-                  ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(animationStack.getItem());
-                  String soundKey = keyFrames.getKeyframeData().getSound();
+                  Identifier itemId = BuiltInRegistries.ITEM.getKey(animationStack.getItem());
+                  String soundKey = keyFrames.keyframeData().getSound();
                   if ("pickup".equals(soundKey)) {
-                     clientSoundHandler.accept(ResourceLocation.fromNamespaceAndPath("minecraft", "entity.item.pickup"));
+                     clientSoundHandler.accept(Identifier.fromNamespaceAndPath("minecraft", "entity.item.pickup"));
                   }
 
-                  ResourceLocation soundId = FoodDefinitionManager.getSound(itemId.toString(), soundKey);
+                  Identifier soundId = FoodDefinitionManager.getSound(itemId.toString(), soundKey);
                   if (soundId != null && clientGetMainHandItem.get() != null) {
                      if (UniqueItem.UNIQUE_ITEM_MAP.get(BuiltInRegistries.ITEM.getKey(clientGetMainHandItem.get())) != null) {
                         Item child_item = BuiltInRegistries.ITEM
-                           .get(UniqueItem.UNIQUE_ITEM_MAP.get(BuiltInRegistries.ITEM.getKey(clientGetMainHandItem.get())));
+                           .getValue(UniqueItem.UNIQUE_ITEM_MAP.get(BuiltInRegistries.ITEM.getKey(clientGetMainHandItem.get())));
                         if (child_item != null) {
                            clientCustomUseHandler.accept(InteractionHand.MAIN_HAND, child_item);
                         }
@@ -153,9 +154,9 @@ public class Empty extends Item implements GeoItem {
             }
          );
          controller.setCustomInstructionKeyframeHandler(keyFrames -> {
-            if (keyFrames.getKeyframeData().getInstructions().contains("finished")) {
+            if (keyFrames.keyframeData().getInstructions().contains("finished")) {
                ItemStack animationStack = clientAnimationStackSupplier.get();
-               controller.stop();
+               controller.stopTriggeredAnimation();
                if (animationStack != null && !animationStack.isEmpty()) {
                   clientAnimationStackClearHandler.run();
                   UUID sessionId = clientAnimationSessionSupplier.get();
@@ -174,7 +175,7 @@ public class Empty extends Item implements GeoItem {
    }
 
    private AnimationController<Empty> createControl(String name) {
-      AnimationController<Empty> controller = new AnimationController<>(this, name, state -> PlayState.STOP);
+      AnimationController<Empty> controller = new AnimationController<>(name, _ -> PlayState.STOP);
       return controller.triggerableAnim(name, RawAnimation.begin().thenPlay(name));
    }
 
@@ -183,7 +184,7 @@ public class Empty extends Item implements GeoItem {
       return stackId == Long.MAX_VALUE ? clientAnimationControllerSupplier.get() : stackId;
    }
 
-   public AnimatableInstanceCache getAnimatableInstanceCache() {
+   public @NonNull AnimatableInstanceCache getAnimatableInstanceCache() {
       return this.cache;
    }
 

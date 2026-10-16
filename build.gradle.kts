@@ -1,7 +1,7 @@
 import java.net.URI
 
 plugins {
-	id("net.fabricmc.fabric-loom-remap")
+	id("net.fabricmc.fabric-loom")
 	`maven-publish`
 }
 
@@ -22,13 +22,15 @@ repositories {
 	maven {
 		url = URI("https://cursemaven.com")
 	}
-	maven {
-		name = "GeckoLib"
-		url = URI("https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/")
-		content {
-			includeGroup("software.bernie.geckolib")
-		}
-	}
+	exclusiveContent {
+        forRepository {
+            maven {
+                name = "GeckoLib"
+                url = uri("https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/")
+            }
+        }
+        filter { includeGroupAndSubgroups("com.geckolib") }
+    }
 }
 
 base {
@@ -38,20 +40,19 @@ base {
 dependencies {
 	// To change the versions see the gradle.properties file
 	minecraft("com.mojang:minecraft:${providers.gradleProperty("minecraft_version").get()}")
-    mappings(loom.officialMojangMappings())
-	modImplementation("net.fabricmc:fabric-loader:${providers.gradleProperty("loader_version").get()}")
-	modImplementation("software.bernie.geckolib:geckolib-fabric-${providers.gradleProperty("minecraft_version").get()}:${
+	implementation("net.fabricmc:fabric-loader:${providers.gradleProperty("loader_version").get()}")
+	implementation("com.geckolib:geckolib-fabric-${providers.gradleProperty("minecraft_version").get()}:${
 		providers.gradleProperty(
 			"geckolib_version"
 		).get()
 	}")
-	modImplementation ("maven.modrinth:kaleidoscope-cookery-refabricated:${providers.gradleProperty("kaleidoscope_cookery_version").get()}-fabric+mc${providers.gradleProperty("minecraft_version").get()}")
-	modImplementation ("maven.modrinth:kaleidoscope-tavern-refabricated:${providers.gradleProperty("kaleidoscope_tavern_version").get()}-fabric+mc${providers.gradleProperty("minecraft_version").get()}")
-	modImplementation("fuzs.forgeconfigapiport:forgeconfigapiport-fabric:${providers.gradleProperty("forge_config_api_version").get()}")
+	implementation ("maven.modrinth:kaleidoscope-cookery-refabricated:${providers.gradleProperty("kaleidoscope_cookery_version").get()}-fabric+mc${providers.gradleProperty("minecraft_version").get()}")
+	implementation ("maven.modrinth:kaleidoscope-tavern-refabricated:${providers.gradleProperty("kaleidoscope_tavern_version").get()}-fabric+mc${providers.gradleProperty("minecraft_version").get()}")
+	implementation("fuzs.forgeconfigapiport:forgeconfigapiport-fabric:${providers.gradleProperty("forge_config_api_version").get()}")
 	// Fabric API. This is technically optional, but you probably want it anyway.
-	modImplementation("net.fabricmc.fabric-api:fabric-api:${providers.gradleProperty("fabric_api_version").get()}")
+	implementation("net.fabricmc.fabric-api:fabric-api:${providers.gradleProperty("fabric_api_version").get()}")
 	// Punchy
-	compileOnly("maven.modrinth:8aoMKplv:kburaezy")
+	compileOnly("maven.modrinth:8aoMKplv:ZTKLyIXH")
 }
 
 tasks.processResources {
@@ -64,7 +65,7 @@ tasks.processResources {
 }
 
 tasks.withType<JavaCompile>().configureEach {
-	options.release = 21
+	options.release = 25
 }
 
 java {
@@ -73,8 +74,8 @@ java {
 	// If you remove this line, sources will not be generated.
 	withSourcesJar()
 
-	sourceCompatibility = JavaVersion.VERSION_21
-	targetCompatibility = JavaVersion.VERSION_21
+	sourceCompatibility = JavaVersion.VERSION_25
+	targetCompatibility = JavaVersion.VERSION_25
 }
 
 tasks.jar {

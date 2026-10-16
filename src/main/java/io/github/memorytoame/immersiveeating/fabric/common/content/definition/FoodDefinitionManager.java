@@ -9,15 +9,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 
-public final class FoodDefinitionManager implements SimpleSynchronousResourceReloadListener {
+public final class FoodDefinitionManager implements ResourceManagerReloadListener {
    private static final Gson GSON = new Gson();
    public static final List<FoodDefinition> list = new ArrayList<>(32);
    public static final List<String> init_ItemIdList = new ArrayList<>(32);
@@ -26,18 +26,13 @@ public final class FoodDefinitionManager implements SimpleSynchronousResourceRel
    private static final Map<String, Set<String>> invisibleMappings = new HashMap<>(32);
 
    @Override
-   public ResourceLocation getFabricId() {
-      return ResourceLocation.fromNamespaceAndPath(KaleidoscopeImmersiveEating.MOD_ID, "food_definitions");
-   }
-
-   @Override
    public void onResourceManagerReload(ResourceManager resourceManager) {
       list.clear();
       soundMappings.clear();
       invisibleMappings.clear();
       init_ItemList.clear();
       init_ItemIdList.clear();
-      Map<ResourceLocation, Resource> resources = resourceManager.listResources(
+      Map<Identifier, Resource> resources = resourceManager.listResources(
          "definitions",
          id -> id.getNamespace().equals(KaleidoscopeImmersiveEating.MOD_ID) && id.getPath().endsWith(".json")
       );
@@ -48,8 +43,8 @@ public final class FoodDefinitionManager implements SimpleSynchronousResourceRel
                continue;
             }
             list.add(definition);
-            ResourceLocation itemId = ResourceLocation.tryParse(definition.getItem());
-            Item item = itemId == null ? null : BuiltInRegistries.ITEM.get(itemId);
+            Identifier itemId = Identifier.tryParse(definition.getItem());
+            Item item = itemId == null ? null : BuiltInRegistries.ITEM.getValue(itemId);
             if (item != null && item != Items.AIR) {
                init_ItemIdList.add(itemId.toString());
                init_ItemList.add(item);
@@ -71,13 +66,13 @@ public final class FoodDefinitionManager implements SimpleSynchronousResourceRel
       }
    }
 
-   public static ResourceLocation getSound(String itemId, String keyframeName) {
+   public static Identifier getSound(String itemId, String keyframeName) {
       Map<String, String> itemSounds = soundMappings.get(itemId);
       if (itemSounds == null) {
          return null;
       }
       String soundId = itemSounds.get(keyframeName);
-      return soundId != null && !soundId.isBlank() ? ResourceLocation.tryParse(soundId) : null;
+      return soundId != null && !soundId.isBlank() ? Identifier.tryParse(soundId) : null;
    }
 
    public static boolean isInvisible(String itemId, String boneName) {

@@ -2,8 +2,7 @@ package io.github.memorytoame.immersiveeating.fabric;
 
 import net.fabricmc.api.ModInitializer;
 
-import net.minecraft.resources.ResourceLocation;
-
+import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +20,7 @@ public final class KaleidoscopeImmersiveEating implements ModInitializer {
 		LOGGER.info("KaleidoscopeImmersiveEating initialized. Author: " + AUTHOR);
 	}
 
-	public static ResourceLocation id(String path) {
-		return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
+	public static Identifier id(String path) {
+		return Identifier.fromNamespaceAndPath(MOD_ID, path);
 	}
 }

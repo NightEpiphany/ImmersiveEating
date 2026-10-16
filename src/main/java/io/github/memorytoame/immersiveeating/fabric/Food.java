@@ -8,6 +8,7 @@ import io.github.memorytoame.immersiveeating.fabric.server.ServerGameplayEvents;
 import io.github.memorytoame.immersiveeating.fabric.server.CommandEvents;
 import io.github.memorytoame.immersiveeating.fabric.unique.UniqueItem;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
+import net.fabricmc.fabric.api.resource.v1.ResourceLoader;
 import net.minecraft.server.packs.PackType;
 
 public final class Food {
@@ -25,7 +26,7 @@ public final class Food {
       Network.register();
       Config.register();
       UniqueItem.initUniqueItemMap();
-      ResourceManagerHelper.get(PackType.SERVER_DATA).registerReloadListener(new FoodDefinitionManager());
+      ResourceLoader.get(PackType.SERVER_DATA).registerReloadListener(KaleidoscopeImmersiveEating.id("food_definition"), new FoodDefinitionManager());
       ServerGameplayEvents.register();
       CommandEvents.register();
       ModItems.init();

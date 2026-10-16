@@ -27,11 +27,11 @@
 	],
 	"depends": {
 		"fabricloader": ">=0.19.3",
-		"minecraft": "~1.21.1",
-		"java": ">=21",
+		"minecraft": "~26.3",
+		"java": ">=25",
 		"fabric-api": "*",
-		"geckolib": ">=4.9",
-		"forgeconfigapiport": ">=21.1.6",
+		"geckolib": ">=5.0",
+		"forgeconfigapiport": ">=26",
 		"kaleidoscope_cookery": ">=1.6.0"
 	},
 	"suggests": {
