@@ -39,7 +39,7 @@ public final class Network {
       PayloadTypeRegistry.serverboundPlay().register(FinishUsePacket.TYPE, FinishUsePacket.STREAM_CODEC);
       PayloadTypeRegistry.serverboundPlay().register(CustomUsingPacket.TYPE, CustomUsingPacket.STREAM_CODEC);
       PayloadTypeRegistry.serverboundPlay().register(StopAnimationPacket.TYPE, StopAnimationPacket.STREAM_CODEC);
-      PayloadTypeRegistry.serverboundPlay().register(StopSoundPacket.TYPE, StopSoundPacket.STREAM_CODEC);
+      PayloadTypeRegistry.clientboundPlay().register(StopSoundPacket.TYPE, StopSoundPacket.STREAM_CODEC);
 
       ServerPlayNetworking.registerGlobalReceiver(AnimationPacket.TYPE, (packet, context) -> {
          ServerPlayer player = context.player();

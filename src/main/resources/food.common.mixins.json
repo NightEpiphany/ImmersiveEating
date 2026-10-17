@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "package": "io.github.memorytoame.immersiveeating.fabric.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "plugin": "io.github.memorytoame.immersiveeating.fabric.plugin.Plugins",
+  "mixins": [
+    "accessor.InventoryAccessor"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  }
+}

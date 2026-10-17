@@ -7,6 +7,7 @@ import io.github.memorytoame.immersiveeating.fabric.common.config.Config;
 import io.github.memorytoame.immersiveeating.fabric.common.content.definition.FoodDefinitionManager;
 import io.github.memorytoame.immersiveeating.fabric.common.content.item.Empty;
 import io.github.memorytoame.immersiveeating.fabric.client.network.ClientNetwork;
+import io.github.memorytoame.immersiveeating.fabric.mixin.accessor.InventoryAccessor;
 import io.github.memorytoame.immersiveeating.fabric.utils.AnimationUtils;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -17,7 +18,7 @@ import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
 
 @Environment(EnvType.CLIENT)
@@ -31,25 +32,36 @@ public final class InputEvents {
    }
 
    public static void register() {
+      ClientTickEvents.START_CLIENT_TICK.register(InputEvents::onClientTickStart);
       ClientTickEvents.END_CLIENT_TICK.register(InputEvents::onClientTick);
       UseItemCallback.EVENT.register((player, level, hand) -> {
          if (!level.isClientSide() || player != Minecraft.getInstance().player || hand != InteractionHand.MAIN_HAND) {
-            return InteractionResultHolder.pass(player.getItemInHand(hand));
+            return InteractionResult.PASS;
          }
 
          Minecraft mc = Minecraft.getInstance();
          ItemStack stack = player.getItemInHand(hand);
          if (Config.ENABLE_RIGHT_BUTTON.get()
             && !player.isCrouching()
-            && !isAnimationGui(mc.screen)
+            && !isAnimationGui(mc.gui.screen())
             && FoodDefinitionManager.init_ItemList.contains(stack.getItem())
             && !Empty.isClientAnimationPlaying(stack, "switchin")
             && GameplayEvents.startRightClickAnimation(stack)) {
-            return InteractionResultHolder.fail(stack);
+            return InteractionResult.FAIL;
          }
 
-         return InteractionResultHolder.pass(stack);
+         return InteractionResult.PASS;
       });
+   }
+
+   private static void onClientTickStart(Minecraft mc) {
+      if (mc.player == null || isAnimationGui(mc.gui.screen()) || !AnimationUtils.isAnimationLocked()) {
+         return;
+      }
+
+      if (mc.options.keyAttack.consumeClick()) {
+         AnimationUtils.stopAnimationControl();
+      }
    }
 
    private static void onClientTick(Minecraft mc) {
@@ -67,14 +79,15 @@ public final class InputEvents {
       }
 
       AnimationUtils.updateCustomUseState(mc);
-      if (!isAnimationGui(mc.screen)) {
+      if (!isAnimationGui(mc.gui.screen())) {
          AnimationUtils.cancelIfHeldItemChanged(mc);
       }
 
-      if ((mc.screen == null || isAnimationGui(mc.screen)) && mc.options.getCameraType().isFirstPerson()) {
+      if ((mc.gui.screen() == null || isAnimationGui(mc.gui.screen())) && mc.options.getCameraType().isFirstPerson()) {
          AnimationUtils.checkEatAnimationState();
          if (AnimationUtils.isAnimationLocked()) {
-            mc.player.getInventory().selected = AnimationUtils.lockedHotbarSlot;
+            var accessToInventory = (InventoryAccessor) mc.player.getInventory();
+            accessToInventory.food$setSelected(AnimationUtils.lockedHotbarSlot);
          } else {
             AnimationUtils.lockedHotbarSlot = -1;
          }
@@ -82,9 +95,6 @@ public final class InputEvents {
          AnimationUtils.stopAnimationControl();
       }
 
-      if (mc.options.keyAttack.consumeClick() && AnimationUtils.isAnimationLocked() && !isAnimationGui(mc.screen)) {
-         AnimationUtils.stopAnimationControl();
-      }
    }
 
    private static void startKeyboardAnimation(Minecraft mc) {
@@ -96,7 +106,7 @@ public final class InputEvents {
       if (!Empty.isClientAnimationPlaying(stack, "switchin")
          && FoodDefinitionManager.init_ItemList.contains(stack.getItem())) {
          AnimationUtils.beginAnimationSession(mc);
-         ClientNetwork.sendAnimation(AnimationUtils.getAnimationSessionId(mc));
+         ClientNetwork.sendAnimation(AnimationUtils.getAnimationSessionId());
       }
    }
 

@@ -7,7 +7,6 @@ import io.github.memorytoame.immersiveeating.fabric.network.Network;
 import io.github.memorytoame.immersiveeating.fabric.server.ServerGameplayEvents;
 import io.github.memorytoame.immersiveeating.fabric.server.CommandEvents;
 import io.github.memorytoame.immersiveeating.fabric.unique.UniqueItem;
-import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.v1.ResourceLoader;
 import net.minecraft.server.packs.PackType;
 

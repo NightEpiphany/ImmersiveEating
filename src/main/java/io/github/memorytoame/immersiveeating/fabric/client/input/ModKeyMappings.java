@@ -8,7 +8,7 @@ import net.minecraft.client.KeyMapping;
 
 @Environment(EnvType.CLIENT)
 public final class ModKeyMappings {
-   private static final KeyMapping ANIMATION_KEY = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+   public static final KeyMapping ANIMATION = KeyMappingHelper.registerKeyMapping(new KeyMapping(
            "key.optional_pickup.pickup",
            21,
            new KeyMapping.Category(
@@ -21,4 +21,3 @@ public final class ModKeyMappings {
 
    public static void register() {}
 }
-

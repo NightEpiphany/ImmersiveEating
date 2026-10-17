@@ -1,5 +1,6 @@
 package io.github.memorytoame.immersiveeating.fabric.common.content.item;
 
+import com.geckolib.GeckoLibConstants;
 import com.geckolib.animatable.GeoItem;
 import com.geckolib.animatable.instance.AnimatableInstanceCache;
 import com.geckolib.animatable.manager.AnimatableManager;
@@ -180,10 +181,13 @@ public class Empty extends Item implements GeoItem {
    }
 
    private static long resolveControllerId(ItemStack stack) {
-      long stackId = stack != null && !stack.isEmpty() ? GeoItem.getId(stack) : Long.MAX_VALUE;
-      return stackId == Long.MAX_VALUE ? clientAnimationControllerSupplier.get() : stackId;
+      Long stackId = stack != null && !stack.isEmpty()
+         ? stack.get(GeckoLibConstants.STACK_ANIMATABLE_ID_COMPONENT.get())
+         : null;
+      return stackId == null ? clientAnimationControllerSupplier.get() : stackId;
    }
 
+   @Override
    public @NonNull AnimatableInstanceCache getAnimatableInstanceCache() {
       return this.cache;
    }

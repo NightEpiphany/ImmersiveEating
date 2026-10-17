@@ -9,8 +9,6 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.BlockGetter;
-import org.joml.Quaternionf;
-import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -20,36 +18,38 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Environment(EnvType.CLIENT)
 @Mixin(Camera.class)
 public abstract class CameraMixin {
-   @Final
    @Shadow
-   private Quaternionf rotation;
+   private boolean detached;
 
-   @Inject(method = "setup", at = @At("TAIL"))
+   @Inject(
+      method = "alignWithEntity",
+      at = @At(
+         value = "INVOKE",
+         target = "Lnet/minecraft/client/Camera;setPosition(DDD)V",
+         shift = At.Shift.BEFORE,
+         ordinal = 0
+      )
+   )
    private void food$applyAnimationRotation(
-      BlockGetter level,
-      Entity entity,
-      boolean detached,
-      boolean mirrored,
-      float partialTick,
-      CallbackInfo ci
+           float partialTicks, CallbackInfo ci
    ) {
       Minecraft mc = Minecraft.getInstance();
-      if (mc.player == null || detached || !mc.options.getCameraType().isFirstPerson()) {
+      if (mc.player == null || this.detached || !mc.options.getCameraType().isFirstPerson()) {
          CameraRotationComposer.clearBlockbenchRotation();
          return;
       }
 
-      if (Empty.isEatAnimationPlaying()) {
-         CameraRotationComposer.applyCapturedBlockbenchRotation(this.rotation);
-      } else {
+      boolean animationPlaying = Empty.isEatAnimationPlaying();
+      if (!animationPlaying) {
          CameraRotationComposer.clearBlockbenchRotation();
       }
 
-      CameraRotationComposer.applyForgeOffset(
-         this.rotation,
-         CameraShake.interpolatedPitch(partialTick),
-         CameraShake.interpolatedYaw(partialTick),
-         CameraShake.interpolatedRoll(partialTick)
+      CameraRotationComposer.applyCameraEffects(
+         (Camera)(Object)this,
+         animationPlaying,
+         CameraShake.interpolatedPitch(partialTicks),
+         CameraShake.interpolatedYaw(partialTicks),
+         CameraShake.interpolatedRoll(partialTicks)
       );
    }
 }

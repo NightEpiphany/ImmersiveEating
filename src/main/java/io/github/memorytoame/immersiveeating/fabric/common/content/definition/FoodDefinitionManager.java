@@ -33,8 +33,8 @@ public final class FoodDefinitionManager implements ResourceManagerReloadListene
       init_ItemList.clear();
       init_ItemIdList.clear();
       Map<Identifier, Resource> resources = resourceManager.listResources(
-         "definitions",
-         id -> id.getNamespace().equals(KaleidoscopeImmersiveEating.MOD_ID) && id.getPath().endsWith(".json")
+              "definitions",
+              id -> id.getNamespace().equals(KaleidoscopeImmersiveEating.MOD_ID) && id.getPath().endsWith(".json")
       );
       for (Resource resource : resources.values()) {
          try (Reader reader = resource.openAsReader()) {

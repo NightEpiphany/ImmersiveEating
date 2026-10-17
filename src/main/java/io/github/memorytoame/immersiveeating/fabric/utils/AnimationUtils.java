@@ -1,6 +1,6 @@
 package io.github.memorytoame.immersiveeating.fabric.utils;
 
-import com.geckolib.animatable.GeoItem;
+import com.geckolib.GeckoLibConstants;
 import io.github.memorytoame.immersiveeating.fabric.client.ClientSoundHandler;
 import io.github.memorytoame.immersiveeating.fabric.client.animation.AnimationResourceChecker;
 import io.github.memorytoame.immersiveeating.fabric.client.animation.CameraRotationComposer;
@@ -42,11 +42,11 @@ public class AnimationUtils {
       activateAnimationLock(mc);
    }
 
-   public static UUID getAnimationSessionId(Minecraft mc) {
+   public static UUID getAnimationSessionId() {
       return animationSessionId;
    }
 
-   public static long getAnimationControllerId(Minecraft mc) {
+   public static long getAnimationControllerId() {
       return animationControllerId;
    }
 
@@ -125,8 +125,8 @@ public class AnimationUtils {
 
    private static long resolveControllerId(Minecraft mc) {
       if (mc != null && mc.player != null) {
-         long id = GeoItem.getId(mc.player.getMainHandItem());
-         return id == Long.MAX_VALUE ? ClientAnimationManager.getOrCreateControllerId(mc.player) : id;
+         Long stackId = mc.player.getMainHandItem().get(GeckoLibConstants.STACK_ANIMATABLE_ID_COMPONENT.get());
+         return stackId == null ? ClientAnimationManager.getOrCreateControllerId(mc.player) : stackId;
       } else {
          return Long.MAX_VALUE;
       }

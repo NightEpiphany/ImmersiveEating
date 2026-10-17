@@ -1,19 +1,14 @@
 package io.github.memorytoame.immersiveeating.fabric.client.render;
 
-import com.geckolib.animatable.GeoItem;
-import com.geckolib.animation.AnimationController;
 import com.geckolib.cache.model.GeoBone;
-import com.geckolib.cache.model.GeoQuad;
-import com.geckolib.cache.model.GeoVertex;
-import com.geckolib.cache.model.cuboid.GeoCube;
+import com.geckolib.constant.DataTickets;
 import com.geckolib.model.GeoModel;
 import com.geckolib.renderer.GeoItemRenderer;
+import com.geckolib.renderer.base.BoneSnapshots;
 import com.geckolib.renderer.base.GeoRenderState;
-import com.geckolib.util.RenderUtil;
+import com.geckolib.renderer.base.RenderPassInfo;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import io.github.memorytoame.immersiveeating.fabric.client.animation.CameraRotationComposer;
-import io.github.memorytoame.immersiveeating.fabric.client.animation.ClientAnimationManager;
 import io.github.memorytoame.immersiveeating.fabric.client.animation.HeldItemMotion;
 import io.github.memorytoame.immersiveeating.fabric.client.animation.VanillaArmRenderer;
 import io.github.memorytoame.immersiveeating.fabric.common.content.definition.FoodDefinitionManager;
@@ -24,176 +19,207 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.renderer.state.level.PlayerRenderState;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
-import org.jetbrains.annotations.Nullable;
-import org.joml.Matrix3f;
-import org.joml.Matrix4f;
-import org.joml.Vector3f;
-import org.joml.Vector4f;
 import org.jspecify.annotations.NonNull;
 
+/** GeckoLib 5 renderer for the dynamic food item model. */
 @Environment(EnvType.CLIENT)
 public class CustomRenderer extends GeoItemRenderer<Empty> {
-   public static Map<String, CustomRenderer> rendererMap = new HashMap<>(32);
-   private final List<VanillaArmRenderer.CapturedArm> capturedArms = new ArrayList<>(8);
+   public static final Map<String, CustomRenderer> rendererMap = new HashMap<>(32);
+
    private final String itemId;
-   private boolean capturingCameraRotation;
+   private final List<VanillaArmRenderer.CapturedArm> capturedArms = new ArrayList<>(4);
    private boolean mirrorLeftHandModel;
+   private boolean capturingCameraRotation;
+   private PlayerRenderState playerRenderState;
 
    public CustomRenderer(String id) {
-      super(new CustomRenderer.Model(getModelId(id)));
+      super(new Model(getModelId(id)));
       this.itemId = getItemId(id);
    }
 
-   public void renderRecursively(
+
+   public void renderByItem(
+      ItemStack stack,
+      ItemDisplayContext transformType,
       PoseStack poseStack,
-      Empty animatable,
-      GeoBone bone,
-      RenderType renderType,
-      MultiBufferSource bufferSource,
-      VertexConsumer buffer,
-      boolean isReRender,
-      float partialTick,
+      SubmitNodeCollector renderTasks,
+      int packedLight,
+      int packedOverlay
+   ) {
+      renderByItem(stack, transformType, poseStack, renderTasks, packedLight, packedOverlay, null);
+   }
+
+
+   public void renderByItem(
+      ItemStack stack,
+      ItemDisplayContext transformType,
+      PoseStack poseStack,
+      SubmitNodeCollector renderTasks,
       int packedLight,
       int packedOverlay,
-      int colour
+      PlayerRenderState playerRenderState
    ) {
-      poseStack.pushPose();
-      RenderUtil.prepMatrixForBone(poseStack, bone);
-      if (this.mirrorLeftHandModel && bone.getParent() == null) {
-         poseStack.mulPose(new Matrix4f().m00(-1.0F));
+      Minecraft minecraft = Minecraft.getInstance();
+      this.playerRenderState = playerRenderState;
+      this.capturedArms.clear();
+      GeoItemRenderer.RenderData renderData = new GeoItemRenderer.RenderData(
+         stack,
+         new ItemStackRenderState(),
+         transformType,
+         minecraft.level,
+         minecraft.player
+      );
+      GeoRenderState renderState = fillRenderState(
+         ModItems.EMPTY,
+         renderData,
+         createRenderState(ModItems.EMPTY, renderData),
+         minecraft.getDeltaTracker().getGameTimeDeltaPartialTick(false)
+      );
+      renderState.addGeckolibData(DataTickets.PACKED_LIGHT, packedLight);
+      renderState.addGeckolibData(DataTickets.PACKED_OVERLAY, packedOverlay);
+      try {
+         submit(renderState, poseStack, renderTasks, 0);
+      } finally {
+         this.playerRenderState = null;
+         this.capturedArms.clear();
+      }
+   }
+
+
+   @Override
+   public void postRenderPass(@NonNull RenderPassInfo<GeoRenderState> renderPassInfo, @NonNull SubmitNodeCollector renderTasks) {
+      if (this.playerRenderState == null || !isFirstPerson(renderPassInfo)) {
+         return;
       }
 
-      boolean cameraBone = "camera".equals(bone.getName());
-      boolean armBone = VanillaArmRenderer.isArmBone(bone);
-      boolean moveBoneBehindCamera = !this.hasInvisibleBoneParent(bone) && this.isInvisibleBone(bone) && this.shouldHideInvisibleBone(partialTick);
-      if (this.capturingCameraRotation && cameraBone) {
-         CameraRotationComposer.captureBlockbenchRotationRadians(bone.getRotX(), bone.getRotY(), bone.getRotZ());
-      }
+      this.capturedArms.clear();
+      renderPassInfo.renderPosed(() -> {
+         PoseStack poseStack = renderPassInfo.poseStack();
+         poseStack.pushPose();
+         poseStack.last().set(renderPassInfo.getModelRenderMatrixPose());
+         for (GeoBone bone : renderPassInfo.model().boneLookup().get().values()) {
+            if (!VanillaArmRenderer.isArmBone(bone)) {
+               continue;
+            }
 
-      if (moveBoneBehindCamera) {
-         poseStack.translate(0.0F, 0.0F, -1000.0F);
-      }
-
-      if (armBone) {
-         if (!isReRender) {
-            VanillaArmRenderer.CapturedArm capturedArm = VanillaArmRenderer.captureArmPose(poseStack, bone, this.mirrorLeftHandModel);
+            VanillaArmRenderer.CapturedArm capturedArm = VanillaArmRenderer.captureArmPose(
+               poseStack,
+               bone,
+               this.mirrorLeftHandModel
+            );
             if (capturedArm != null) {
                this.capturedArms.add(capturedArm);
             }
          }
-      } else {
-         this.renderCubesOfBone(poseStack, bone, buffer, packedLight, packedOverlay, colour);
-      }
+         poseStack.popPose();
+      });
 
-      if (!isReRender) {
-         this.applyRenderLayersForBone(poseStack, animatable, bone, renderType, bufferSource, buffer, partialTick, packedLight, packedOverlay);
-      }
-
-      this.renderChildBones(poseStack, animatable, bone, renderType, bufferSource, buffer, isReRender, partialTick, packedLight, packedOverlay, colour);
-      poseStack.popPose();
+      VanillaArmRenderer.renderCapturedArms(
+         this.capturedArms,
+         renderTasks,
+         renderPassInfo.packedLight(),
+         this.playerRenderState
+      );
    }
 
-   public void renderByItem(
-      ItemStack stack, ItemDisplayContext transformType, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, int packedOverlay
-   ) {
-      this.capturedArms.clear();
-      poseStack.pushPose();
-      float partialTick = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
-      HeldItemMotion.applyIdleMotion(poseStack, partialTick);
-      HeldItemMotion.applyWalkMotion(poseStack, partialTick);
-      HeldItemMotion.applyInertiaMotion(poseStack, partialTick);
-      HeldItemMotion.applyJumpMotion(poseStack, partialTick);
-      HeldItemMotion.applyCrouchMotion(poseStack, partialTick);
-      boolean firstPerson = transformType == ItemDisplayContext.FIRST_PERSON_RIGHT_HAND || transformType == ItemDisplayContext.FIRST_PERSON_LEFT_HAND;
+   private static boolean isFirstPerson(RenderPassInfo<GeoRenderState> renderPassInfo) {
+      ItemDisplayContext transformType = renderPassInfo.getOrDefaultGeckolibData(
+         DataTickets.ITEM_RENDER_PERSPECTIVE,
+         ItemDisplayContext.NONE
+      );
+      return transformType == ItemDisplayContext.FIRST_PERSON_RIGHT_HAND
+         || transformType == ItemDisplayContext.FIRST_PERSON_LEFT_HAND;
+   }
+
+   @Override
+   public RenderType getRenderType(GeoRenderState renderState, @NonNull Identifier texture) {
+      ItemDisplayContext transformType = renderState.getOrDefaultGeckolibData(DataTickets.ITEM_RENDER_PERSPECTIVE, ItemDisplayContext.NONE);
+      return transformType == ItemDisplayContext.FIRST_PERSON_LEFT_HAND
+         ? RenderTypes.entityTranslucent(texture)
+         : RenderTypes.entityTranslucentCull(texture);
+   }
+
+   @Override
+   public void adjustRenderPose(@NonNull RenderPassInfo<GeoRenderState> renderPassInfo) {
+      super.adjustRenderPose(renderPassInfo);
+
+      float partialTick = renderPassInfo.getOrDefaultGeckolibData(
+         DataTickets.PARTIAL_TICK,
+         Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false)
+      );
+      ItemDisplayContext transformType = renderPassInfo.getOrDefaultGeckolibData(
+         DataTickets.ITEM_RENDER_PERSPECTIVE,
+         ItemDisplayContext.NONE
+      );
+      boolean firstPerson = transformType == ItemDisplayContext.FIRST_PERSON_RIGHT_HAND
+         || transformType == ItemDisplayContext.FIRST_PERSON_LEFT_HAND;
       this.mirrorLeftHandModel = transformType == ItemDisplayContext.FIRST_PERSON_LEFT_HAND;
-      boolean mirroredRender = this.mirrorLeftHandModel;
       this.capturingCameraRotation = firstPerson && AnimationUtils.isAnimationLocked();
+
       if (firstPerson) {
          CameraRotationComposer.clearBlockbenchRotation();
+         HeldItemMotion.applyIdleMotion(renderPassInfo.poseStack(), partialTick);
+         HeldItemMotion.applyWalkMotion(renderPassInfo.poseStack(), partialTick);
+         HeldItemMotion.applyInertiaMotion(renderPassInfo.poseStack(), partialTick);
+         HeldItemMotion.applyJumpMotion(renderPassInfo.poseStack(), partialTick);
+         HeldItemMotion.applyCrouchMotion(renderPassInfo.poseStack(), partialTick);
       }
 
-      try {
-         super.renderByItem(stack, transformType, poseStack, bufferSource, packedLight, packedOverlay);
-      } finally {
-         this.capturingCameraRotation = false;
-         this.mirrorLeftHandModel = false;
+      if (this.mirrorLeftHandModel) {
+         renderPassInfo.poseStack().scale(-1.0F, 1.0F, 1.0F);
       }
-
-      poseStack.popPose();
-      VanillaArmRenderer.renderCapturedArms(this.capturedArms, bufferSource, packedLight, partialTick, mirroredRender);
-      this.capturedArms.clear();
    }
 
-   public void renderCube(PoseStack poseStack, GeoCube cube, VertexConsumer buffer, int packedLight, int packedOverlay, int colour) {
-      RenderUtil.translateToPivotPoint(poseStack, cube);
-      RenderUtil.rotateMatrixAroundCube(poseStack, cube);
-      RenderUtil.translateAwayFromPivotPoint(poseStack, cube);
-      Matrix3f normalMatrix = poseStack.last().normal();
-      Matrix4f poseMatrix = new Matrix4f(poseStack.last().pose());
+   @Override
+   public void adjustModelBonesForRender(RenderPassInfo<GeoRenderState> renderPassInfo, @NonNull BoneSnapshots snapshots) {
+      float partialTick = renderPassInfo.getOrDefaultGeckolibData(
+         DataTickets.PARTIAL_TICK,
+         Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false)
+      );
+      boolean hideInvisibleBones = shouldHideInvisibleBone(partialTick);
 
-      for (GeoQuad quad : cube.quads()) {
-         if (quad != null) {
-            Vector3f normal = normalMatrix.transform(new Vector3f(quad.normal()));
-            RenderUtil.fixInvertedFlatCube(cube, normal);
-            GeoVertex[] vertices = quad.vertices();
-            if (this.mirrorLeftHandModel) {
-               for (int i = vertices.length - 1; i >= 0; i--) {
-                  addMirroredVertex(vertices[i], poseMatrix, normal, buffer, packedLight, packedOverlay, colour);
-               }
-            } else {
-               for (GeoVertex vertex : vertices) {
-                  addMirroredVertex(vertex, poseMatrix, normal, buffer, packedLight, packedOverlay, colour);
-               }
-            }
+      for (GeoBone bone : renderPassInfo.model().boneLookup().get().values()) {
+         if (this.capturingCameraRotation && "camera".equals(bone.name())) {
+            snapshots.ifPresent(
+               bone.name(),
+               snapshot -> CameraRotationComposer.captureBlockbenchRotationRadians(
+                  snapshot.getRotX(), snapshot.getRotY(), snapshot.getRotZ()
+               )
+            );
+         }
+
+         if (isFirstPerson(renderPassInfo) && VanillaArmRenderer.isArmBone(bone)) {
+            snapshots.ifPresent(bone.name(), snapshot -> snapshot.skipRender(true));
+         }
+
+         if (hideInvisibleBones && isInvisibleBone(bone) && !hasInvisibleBoneParent(bone)) {
+            snapshots.ifPresent(bone.name(), snapshot -> snapshot.setTranslateZ(-16000.0F));
          }
       }
    }
 
-   private static void addMirroredVertex(
-           GeoVertex vertex, Matrix4f poseMatrix, Vector3f normal, VertexConsumer buffer, int packedLight, int packedOverlay, int colour
-   ) {
-      Vector4f position = poseMatrix.transform(new Vector4f(vertex.position().x(), vertex.position().y(), vertex.position().z(), 1.0F));
-      buffer.addVertex(
-         position.x(), position.y(), position.z(), colour, vertex.texU(), vertex.texV(), packedOverlay, packedLight, normal.x(), normal.y(), normal.z()
-      );
-   }
-
-   public RenderType getRenderType(Empty animatable, Identifier texture, @Nullable MultiBufferSource bufferSource, float partialTick) {
-      return RenderType.entityTranslucentCull(texture);
-   }
-
-   private static String getModelId(String id) {
-      Identifier resourceLocation = Identifier.tryParse(id);
-      return resourceLocation == null ? id : resourceLocation.getPath();
-   }
-
-   private static String getItemId(String id) {
-      Identifier resourceLocation = Identifier.tryParse(id);
-      return resourceLocation == null ? id : resourceLocation.toString();
-   }
-
    private boolean shouldHideInvisibleBone(float partialTick) {
-      Minecraft mc = Minecraft.getInstance();
-      boolean armSwinging = mc.player != null && (mc.player.swinging || mc.player.getAttackAnim(partialTick) > 1.0E-4F);
-      boolean animationPlaying = AnimationUtils.isAnimationLocked() && this.isPlayingAnimation();
-      return armSwinging || !animationPlaying;
+      return !(AnimationUtils.isAnimationLocked() && Empty.isEatAnimationPlaying());
    }
 
    private boolean isInvisibleBone(GeoBone bone) {
-      return FoodDefinitionManager.isInvisible(this.itemId, bone.getName());
+      return FoodDefinitionManager.isInvisible(this.itemId, bone.name());
    }
 
    private boolean hasInvisibleBoneParent(GeoBone bone) {
-      for (GeoBone parent = bone.getParent(); parent != null; parent = parent.getParent()) {
-         if (this.isInvisibleBone(parent)) {
+      for (GeoBone parent = bone.parent(); parent != null; parent = parent.parent()) {
+         if (isInvisibleBone(parent)) {
             return true;
          }
       }
@@ -201,42 +227,26 @@ public class CustomRenderer extends GeoItemRenderer<Empty> {
       return false;
    }
 
-   private boolean isPlayingAnimation() {
-      ItemStack stack = this.getCurrentItemStack();
-      if (stack != null && !stack.isEmpty()) {
-         long instanceId = GeoItem.getId(stack);
-         if (instanceId == Long.MAX_VALUE && Minecraft.getInstance().player != null) {
-            instanceId = ClientAnimationManager.getOrCreateControllerId(Minecraft.getInstance().player);
-         }
-
-         boolean result = false;
-
-         for (AnimationController<?> controller3 : ModItems.EMPTY
-            .getAnimatableInstanceCache()
-            .getManagerForId(instanceId)
-            .getAnimationControllers()
-            .values()) {
-            if (controller3 != null && controller3.isPlayingTriggeredAnimation() && "eat".equals(controller3.getName())) {
-               result = true;
-            }
-         }
-
-         return result;
-      } else {
-         return false;
-      }
+   private static String getModelId(String id) {
+      Identifier identifier = Identifier.tryParse(id);
+      return identifier == null ? id : identifier.getPath();
    }
 
-   private static class Model extends GeoModel<Empty> {
+   private static String getItemId(String id) {
+      Identifier identifier = Identifier.tryParse(id);
+      return identifier == null ? id : identifier.toString();
+   }
+
+   private static final class Model extends GeoModel<Empty> {
       private final String id;
 
-      public Model(String id) {
+      private Model(String id) {
          this.id = id;
       }
 
       @Override
       public @NonNull Identifier getModelResource(@NonNull GeoRenderState renderState) {
-         return Identifier.fromNamespaceAndPath("food", "geo/" + this.id + ".geo.json");
+         return Identifier.fromNamespaceAndPath("food", "geo/" + this.id);
       }
 
       @Override
@@ -250,4 +260,3 @@ public class CustomRenderer extends GeoItemRenderer<Empty> {
       }
    }
 }
-

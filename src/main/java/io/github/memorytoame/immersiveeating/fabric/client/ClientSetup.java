@@ -2,6 +2,9 @@ package io.github.memorytoame.immersiveeating.fabric.client;
 
 import io.github.memorytoame.immersiveeating.fabric.KaleidoscopeImmersiveEating;
 import io.github.memorytoame.immersiveeating.fabric.client.animation.CameraShake;
+import io.github.memorytoame.immersiveeating.fabric.client.config.ClientConfig;
+import io.github.memorytoame.immersiveeating.fabric.client.events.ClientReloadEvents;
+import io.github.memorytoame.immersiveeating.fabric.client.events.FirstPersonModEvents;
 import io.github.memorytoame.immersiveeating.fabric.client.network.ClientNetwork;
 import io.github.memorytoame.immersiveeating.fabric.common.content.definition.FoodDefinitionManager;
 import io.github.memorytoame.immersiveeating.fabric.common.content.item.Empty;
@@ -9,7 +12,6 @@ import io.github.memorytoame.immersiveeating.fabric.utils.AnimationUtils;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.v1.ResourceLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.packs.PackType;
@@ -23,6 +25,7 @@ public final class ClientSetup {
 
    public static void register() {
       ClientNetwork.register();
+      ClientConfig.register();
       Empty.setClientHooks(
          stack -> AnimationUtils.playCustomUseReequipAnimation(Minecraft.getInstance(), stack),
          CameraShake::trigger,
@@ -33,10 +36,10 @@ public final class ClientSetup {
          () -> AnimationUtils.temp = null,
          AnimationUtils::finishAnimationSession,
          () -> Minecraft.getInstance().player == null ? Items.AIR : Minecraft.getInstance().player.getMainHandItem().getItem(),
-         () -> AnimationUtils.getAnimationSessionId(Minecraft.getInstance()),
+         AnimationUtils::getAnimationSessionId,
          () -> {
             AnimationUtils.refreshAnimationControllerId(Minecraft.getInstance());
-            return AnimationUtils.getAnimationControllerId(Minecraft.getInstance());
+            return AnimationUtils.getAnimationControllerId();
          }
       );
       Empty.setClientSoundHooks(ClientSoundHandler::playLocal, ClientSoundHandler::stopLocalSounds);
@@ -44,6 +47,8 @@ public final class ClientSetup {
          (hand, item) -> ClientNetwork.sendCustomUsing(hand, item, 1),
          ClientNetwork::sendFinishUse
       );
+      ClientReloadEvents.register();
+      FirstPersonModEvents.register();
       ResourceLoader.get(PackType.CLIENT_RESOURCES).registerReloadListener(KaleidoscopeImmersiveEating.id("food_definition"), new FoodDefinitionManager());
       ClientTickEvents.END_CLIENT_TICK.register(CameraShake::tickClient);
    }

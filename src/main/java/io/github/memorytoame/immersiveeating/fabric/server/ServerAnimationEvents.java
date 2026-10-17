@@ -1,6 +1,7 @@
 package io.github.memorytoame.immersiveeating.fabric.server;
 
 import io.github.memorytoame.immersiveeating.fabric.init.ModItems;
+import io.github.memorytoame.immersiveeating.fabric.common.config.Config;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.server.level.ServerPlayer;

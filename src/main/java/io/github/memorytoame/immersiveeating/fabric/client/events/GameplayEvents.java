@@ -4,9 +4,12 @@ import io.github.memorytoame.immersiveeating.fabric.common.content.definition.Fo
 import io.github.memorytoame.immersiveeating.fabric.common.content.item.Empty;
 import io.github.memorytoame.immersiveeating.fabric.client.network.ClientNetwork;
 import io.github.memorytoame.immersiveeating.fabric.utils.AnimationUtils;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.item.ItemStack;
 
+@Environment(EnvType.CLIENT)
 public final class GameplayEvents {
    private GameplayEvents() {
    }
@@ -21,7 +24,7 @@ public final class GameplayEvents {
       if (mc.player != null && !AnimationUtils.isAnimationLocked() && !AnimationUtils.isAnimationRequestPending()
          && !Empty.isClientAnimationPlaying(stack, "switchin") && FoodDefinitionManager.init_ItemList.contains(stack.getItem())) {
          AnimationUtils.beginAnimationSession(mc);
-         ClientNetwork.sendAnimation(AnimationUtils.getAnimationSessionId(mc));
+         ClientNetwork.sendAnimation(AnimationUtils.getAnimationSessionId());
          return true;
       }
       return false;

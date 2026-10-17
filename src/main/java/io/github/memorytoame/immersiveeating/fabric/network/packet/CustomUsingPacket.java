@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 @SuppressWarnings("deprecation")
 public record CustomUsingPacket(InteractionHand hand, Item customItem, int count) implements CustomPacketPayload {
    public static final Type<CustomUsingPacket> TYPE = new Type<>(
-           Identifier.fromNamespaceAndPath("food", "custom_using")
+      Identifier.fromNamespaceAndPath("food", "custom_using")
    );
    public static final StreamCodec<FriendlyByteBuf, CustomUsingPacket> STREAM_CODEC = new StreamCodec<>() {
       @Override

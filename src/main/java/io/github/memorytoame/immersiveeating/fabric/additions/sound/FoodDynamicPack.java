@@ -24,10 +24,10 @@ import org.jspecify.annotations.Nullable;
 
 public class FoodDynamicPack implements PackResources {
    private static final PackMetadataSection METADATA = new PackMetadataSection(
-      Component.literal("Provides models and animations."), PackFormat.of(97).minorRange()
+           Component.literal("Provides models and animations."), PackFormat.of(97).minorRange()
    );
    private static final PackLocationInfo LOCATION = new PackLocationInfo(
-      "food_dynamic", Component.literal("Kaleidoscope ImmersiveEating Resources"), PackSource.BUILT_IN, Optional.empty()
+           "food_dynamic", Component.literal("Kaleidoscope ImmersiveEating Resources"), PackSource.BUILT_IN, Optional.empty()
    );
 
    public IoSupplier<InputStream> getResource(@NonNull PackType type, @NonNull Identifier location) {
@@ -71,7 +71,7 @@ public class FoodDynamicPack implements PackResources {
 
    @Override
    public @Nullable <T> T getMetadataSection(@NonNull MetadataSectionType<T> serializer) throws IOException {
-      return (T)(serializer == PackMetadataSection.SERVER_TYPE ? METADATA : null);
+      return (T)(serializer == PackMetadataSection.CLIENT_TYPE ? METADATA : null);
    }
 
    public @NonNull PackLocationInfo location() {
