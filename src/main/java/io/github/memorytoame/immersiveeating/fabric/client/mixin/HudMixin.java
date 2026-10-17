@@ -17,7 +17,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class HudMixin {
    @Inject(method = "extractItemHotbar", at = @At("HEAD"), cancellable = true)
    private void food$hideHotbar(GuiGraphicsExtractor graphics, DeltaTracker deltaTracker, CallbackInfo ci) {
-      if (ClientConfig.HIDE_GUI_WHEN_EATING.get() && AnimationUtils.isAnimationLocked()) {
+      if (!ClientConfig.HIDE_GUI_WHEN_EATING.get() && AnimationUtils.isAnimationLocked()) {
          ci.cancel();
       }
    }
