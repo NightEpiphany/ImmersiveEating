@@ -2,13 +2,14 @@ package io.github.memorytoame.immersiveeating.fabric.client.render;
 
 import com.geckolib.cache.model.GeoBone;
 import com.geckolib.constant.DataTickets;
-import com.geckolib.model.GeoModel;
+import com.geckolib.model.DefaultedItemGeoModel;
 import com.geckolib.renderer.GeoItemRenderer;
 import com.geckolib.renderer.base.BoneSnapshots;
 import com.geckolib.renderer.base.GeoRenderState;
 import com.geckolib.renderer.base.RenderPassInfo;
 import com.mojang.blaze3d.vertex.PoseStack;
 import io.github.memorytoame.immersiveeating.fabric.client.animation.CameraRotationComposer;
+import io.github.memorytoame.immersiveeating.fabric.client.animation.GeckoLibAssetPaths;
 import io.github.memorytoame.immersiveeating.fabric.client.animation.HeldItemMotion;
 import io.github.memorytoame.immersiveeating.fabric.client.animation.VanillaArmRenderer;
 import io.github.memorytoame.immersiveeating.fabric.common.content.definition.FoodDefinitionManager;
@@ -32,7 +33,7 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.NonNull;
 
-/** GeckoLib 5 renderer for the dynamic food item model. */
+/** 基于GeckoLib 5. */
 @Environment(EnvType.CLIENT)
 public class CustomRenderer extends GeoItemRenderer<Empty> {
    public static final Map<String, CustomRenderer> rendererMap = new HashMap<>(32);
@@ -237,26 +238,15 @@ public class CustomRenderer extends GeoItemRenderer<Empty> {
       return identifier == null ? id : identifier.toString();
    }
 
-   private static final class Model extends GeoModel<Empty> {
-      private final String id;
-
+   /**
+    * GeckoLib 5 derives item resources from the cache id {@code food:item/<id>}.
+    * The corresponding files live under {@code geckolib/models/item} and
+    * {@code geckolib/animations/item}; DefaultedItemGeoModel keeps those paths
+    * consistent for the model, texture, and animation lookups.
+    */
+   private static final class Model extends DefaultedItemGeoModel<Empty> {
       private Model(String id) {
-         this.id = id;
-      }
-
-      @Override
-      public @NonNull Identifier getModelResource(@NonNull GeoRenderState renderState) {
-         return Identifier.fromNamespaceAndPath("food", "geo/" + this.id);
-      }
-
-      @Override
-      public @NonNull Identifier getTextureResource(@NonNull GeoRenderState renderState) {
-         return Identifier.fromNamespaceAndPath("food", "textures/item/" + this.id + ".png");
-      }
-
-      @Override
-      public @NonNull Identifier getAnimationResource(@NonNull Empty animatable) {
-         return Identifier.fromNamespaceAndPath("food", "animations/" + this.id + ".animation.json");
+         super(GeckoLibAssetPaths.itemBase(id));
       }
    }
 }

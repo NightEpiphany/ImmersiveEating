@@ -17,7 +17,7 @@ classes/
 *.iws
 logs/
 ref/
-
+.gecko-source/
 # vscode
 
 .settings/

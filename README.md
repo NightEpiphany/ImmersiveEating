@@ -27,7 +27,7 @@ Kaleidoscope: ImmersiveEating 是一个第一人称进食动画模组，已与�
 
 - Minecraft `1.20.1` `1.21.1` `26.x`
 - Forge `47.4.22` NeoForge: `21.1.248` Fabric `0.19.5`
-- GeckoLib `4.8.2` NeoForge: `4.8.4` Fabric: `4.9.3`
+- GeckoLib `4.8.2` (1.20.1/1.21.1 legacy ports); Fabric 26.3: `5.5.7`
 - 森罗物语（Kaleidoscope Cookery）`1.6.0-forge+mc1.20.1`（单向联动） NeoForge:`1.6.0-neoforge+mc1.21.1` Fabric(refabricated):`1.6.0.5-fabric+mc1.21.1`
 ## 扩展
 一个食物扩展由定义、模型、动画和材质组成：
@@ -36,10 +36,11 @@ Kaleidoscope: ImmersiveEating 是一个第一人称进食动画模组，已与�
 src/main/resources/assets/food/
 ├── definitions/
 │   └── example_food.json
-├── geo/
-│   └── example_food.geo.json
-├── animations/
-│   └── example_food.animation.json
+├── geckolib/
+│   ├── models/item/
+│   │   └── example_food.geo.json
+│   └── animations/item/
+│       └── example_food.animation.json
 └── textures/item/
     └── example_food.png
 ```
@@ -62,10 +63,13 @@ src/main/resources/assets/food/
 
 模型、动画、材质文件名必须与定义文件名一致。例如定义文件是 `example_food.json`，则应使用：
 ```text
-geo/example_food.geo.json
-animations/example_food.animation.json
+geckolib/models/item/example_food.geo.json
+geckolib/animations/item/example_food.animation.json
 textures/item/example_food.png
 ```
+
+GeckoLib 5 会从 `geckolib/models` 与 `geckolib/animations` 加载资源，并使用 `item/<名称>` 作为物品模型和动画的资源 ID。
+26.3 的物品模型入口位于 `items/<名称>.json`；模组内置的代理物品使用 `items/empty.json` 指向 `models/item/empty.json`。
 动画文件中的进食动画名称必须为 `eat`。动画结束时，在时间线加入 动画效果-指令-脚本:finished：
 ## 贡献者
 ### Programmer

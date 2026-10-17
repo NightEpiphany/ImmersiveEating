@@ -20,6 +20,7 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.SwingAnimation;
 
 @Environment(EnvType.CLIENT)
 public final class InputEvents {
@@ -27,6 +28,7 @@ public final class InputEvents {
    public static float debugY = 0.05F;
    public static float debugZ = -0.3F;
    public static float debugRo = 0.0F;
+   private static boolean rightClickHandled;
 
    private InputEvents() {
    }
@@ -34,33 +36,42 @@ public final class InputEvents {
    public static void register() {
       ClientTickEvents.START_CLIENT_TICK.register(InputEvents::onClientTickStart);
       ClientTickEvents.END_CLIENT_TICK.register(InputEvents::onClientTick);
-      UseItemCallback.EVENT.register((player, level, hand) -> {
-         if (!level.isClientSide() || player != Minecraft.getInstance().player || hand != InteractionHand.MAIN_HAND) {
-            return InteractionResult.PASS;
-         }
+   }
 
-         Minecraft mc = Minecraft.getInstance();
-         ItemStack stack = player.getItemInHand(hand);
-         if (Config.ENABLE_RIGHT_BUTTON.get()
-            && !player.isCrouching()
-            && !isAnimationGui(mc.gui.screen())
-            && FoodDefinitionManager.init_ItemList.contains(stack.getItem())
-            && !Empty.isClientAnimationPlaying(stack, "switchin")
-            && GameplayEvents.startRightClickAnimation(stack)) {
-            return InteractionResult.FAIL;
-         }
+   public static boolean handleRightClick(Minecraft mc) {
+      if (mc == null || !mc.options.keyUse.isDown()) {
+         rightClickHandled = false;
+      }
 
-         return InteractionResult.PASS;
-      });
+      if (mc == null || mc.player == null || !Config.ENABLE_RIGHT_BUTTON.get()
+              || mc.player.isCrouching() || isAnimationGui(mc.gui.screen())) {
+         return false;
+      }
+
+      ItemStack stack = mc.player.getMainHandItem();
+      if (!FoodDefinitionManager.init_ItemList.contains(stack.getItem())
+              || Empty.isClientAnimationPlaying(stack, "switchin")) {
+         return false;
+      }
+
+      if (!rightClickHandled) {
+         GameplayEvents.startRightClickAnimation(stack);
+         rightClickHandled = true;
+      }
+      return true;
    }
 
    private static void onClientTickStart(Minecraft mc) {
+      if (mc.player == null || !mc.options.keyUse.isDown()) {
+         rightClickHandled = false;
+      }
       if (mc.player == null || isAnimationGui(mc.gui.screen()) || !AnimationUtils.isAnimationLocked()) {
          return;
       }
 
       if (mc.options.keyAttack.consumeClick()) {
          AnimationUtils.stopAnimationControl();
+         mc.player.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
       }
    }
 

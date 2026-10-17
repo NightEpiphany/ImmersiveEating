@@ -22,7 +22,7 @@ public final class GameplayEvents {
    public static boolean startRightClickAnimation(ItemStack stack) {
       Minecraft mc = Minecraft.getInstance();
       if (mc.player != null && !AnimationUtils.isAnimationLocked() && !AnimationUtils.isAnimationRequestPending()
-         && !Empty.isClientAnimationPlaying(stack, "switchin") && FoodDefinitionManager.init_ItemList.contains(stack.getItem())) {
+         && FoodDefinitionManager.init_ItemList.contains(stack.getItem())) {
          AnimationUtils.beginAnimationSession(mc);
          ClientNetwork.sendAnimation(AnimationUtils.getAnimationSessionId());
          return true;

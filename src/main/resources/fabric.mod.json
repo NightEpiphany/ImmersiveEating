@@ -20,6 +20,9 @@
 		],
 		"client": [
 			"io.github.memorytoame.immersiveeating.fabric.KaleidoscopeImmersiveEatingClient"
+		],
+		"fabric-gametest": [
+			"io.github.memorytoame.immersiveeating.fabric.gametest.GeckoLibAssetGameTest"
 		]
 	},
 	"mixins": [

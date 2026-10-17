@@ -31,7 +31,20 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Environment(EnvType.CLIENT)
 @Mixin(FirstPersonHandsAndItemsRenderer.class)
 public abstract class ItemRendererMixin {
-   @Inject(method = "submitArmWithItem", at = @At("HEAD"), cancellable = true)
+   /**
+    * Vanilla builds the first-person item transform before submitting the item
+    * render state. Replacing that submission keeps all vanilla hand, swing,
+    * use-animation, and equip-height transforms in the pose stack.
+    */
+   @Inject(
+      method = "submitArmWithItem",
+      at = @At(
+         value = "INVOKE",
+         target = "Lnet/minecraft/client/renderer/item/ItemStackRenderState;submit(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;III)V",
+         ordinal = 1
+      ),
+      cancellable = true
+   )
    private void food$renderCustomMainHand(
       PlayerRenderState playerState,
       FirstPersonHandsAndItemsRenderState state,
@@ -47,6 +60,13 @@ public abstract class ItemRendererMixin {
       CallbackInfo ci
    ) {
       if (hand != InteractionHand.MAIN_HAND || !FoodDefinitionManager.init_ItemList.contains(stack.getItem())) {
+         return;
+      }
+
+      // A normal right-click food use is rendered by vanilla. The custom
+      // model is reserved for the explicit GeckoLib eating session, which
+      // leaves the player's vanilla isUsingItem flag unset.
+      if (food$isVanillaUse(playerState, hand, stack)) {
          return;
       }
 
@@ -94,7 +114,23 @@ public abstract class ItemRendererMixin {
          playerState
       );
       poseStack.popPose();
+      // The injected call is inside vanilla's method-level pushPose scope.
+      poseStack.popPose();
       ci.cancel();
+   }
+
+   private static boolean food$isVanillaUse(PlayerRenderState playerState, InteractionHand hand, ItemStack stack) {
+      if (playerState.avatarRenderState == null
+         || !playerState.avatarRenderState.isUsingItem
+         || playerState.avatarRenderState.useItemHand != hand) {
+         return false;
+      }
+
+      Minecraft mc = Minecraft.getInstance();
+      return mc.player != null
+         && mc.player.isUsingItem()
+         && mc.player.getUsedItemHand() == hand
+         && ItemStack.isSameItemSameComponents(mc.player.getUseItem(), stack);
    }
 
 }

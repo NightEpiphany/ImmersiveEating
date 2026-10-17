@@ -3,6 +3,7 @@ package io.github.memorytoame.immersiveeating.fabric.client.mixin;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import io.github.memorytoame.immersiveeating.fabric.client.animation.GeckoLibAssetPaths;
 import io.github.memorytoame.immersiveeating.fabric.common.content.definition.FoodDefinitionManager;
 import io.github.memorytoame.immersiveeating.fabric.common.content.item.Empty;
 import java.io.InputStreamReader;
@@ -15,8 +16,10 @@ import net.minecraft.client.renderer.FirstPersonHandsAndItemsRenderer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.state.level.FirstPersonHandsAndItemsRenderState;
 import net.minecraft.client.renderer.state.level.PlayerRenderState;
+import net.minecraft.client.renderer.entity.state.AvatarRenderState;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -87,9 +90,28 @@ public abstract class ItemInHandRendererMixin {
          this.food$renderedMainHandItem = state.mainHandItem.copy();
       }
 
-      if (this.food$isCustomMainHand(state.mainHandItem) || this.food$isCustomMainHand(this.food$renderedMainHandItem)) {
+      if ((this.food$isCustomMainHand(state.mainHandItem) || this.food$isCustomMainHand(this.food$renderedMainHandItem))
+         && !food$isVanillaUse(playerState, InteractionHand.MAIN_HAND, state.mainHandItem)) {
          state.handRenderSelection = FirstPersonHandsAndItemsRenderState.HandRenderSelection.RENDER_MAIN_HAND_ONLY;
       }
+   }
+
+   @Unique
+   private static boolean food$isVanillaUse(
+      PlayerRenderState playerState,
+      InteractionHand hand,
+      ItemStack stack
+   ) {
+      AvatarRenderState avatar = playerState.avatarRenderState;
+      if (avatar == null || !avatar.isUsingItem || avatar.useItemHand != hand) {
+         return false;
+      }
+
+      Minecraft mc = Minecraft.getInstance();
+      return mc.player != null
+         && mc.player.isUsingItem()
+         && mc.player.getUsedItemHand() == hand
+         && ItemStack.isSameItemSameComponents(mc.player.getUseItem(), stack);
    }
 
    @Unique
@@ -115,7 +137,7 @@ public abstract class ItemInHandRendererMixin {
 
       Identifier itemId = BuiltInRegistries.ITEM.getKey(stack.getItem());
       String animationId = "sakura_fubuki".equals(itemId.getPath()) ? "flower_tea" : itemId.getPath();
-      Identifier animationResource = Identifier.fromNamespaceAndPath("food", "animations/" + animationId + ".animation.json");
+      Identifier animationResource = GeckoLibAssetPaths.animationResource(animationId);
       return Minecraft.getInstance().getResourceManager().getResource(animationResource).map(resource -> {
          try (Reader reader = new InputStreamReader(resource.open(), StandardCharsets.UTF_8)) {
             JsonElement root = JsonParser.parseReader(reader);

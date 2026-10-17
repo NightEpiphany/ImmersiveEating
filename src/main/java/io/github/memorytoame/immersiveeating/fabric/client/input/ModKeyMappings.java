@@ -1,5 +1,6 @@
 package io.github.memorytoame.immersiveeating.fabric.client.input;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import io.github.memorytoame.immersiveeating.fabric.KaleidoscopeImmersiveEating;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -9,10 +10,10 @@ import net.minecraft.client.KeyMapping;
 @Environment(EnvType.CLIENT)
 public final class ModKeyMappings {
    public static final KeyMapping ANIMATION = KeyMappingHelper.registerKeyMapping(new KeyMapping(
-           "key.optional_pickup.pickup",
-           21,
+           "key.food.animation",
+           InputConstants.KEY_U,
            new KeyMapping.Category(
-                   KaleidoscopeImmersiveEating.id("key.categories.optional_pickup")
+                   KaleidoscopeImmersiveEating.id("key.categories.food")
            )
    ));
 

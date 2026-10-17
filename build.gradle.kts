@@ -51,8 +51,14 @@ dependencies {
 	implementation("fuzs.forgeconfigapiport:forgeconfigapiport-fabric:${providers.gradleProperty("forge_config_api_version").get()}")
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	implementation("net.fabricmc.fabric-api:fabric-api:${providers.gradleProperty("fabric_api_version").get()}")
+	testImplementation("org.junit.jupiter:junit-jupiter:5.12.2")
+	testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.12.2")
 	// Punchy
 	compileOnly("maven.modrinth:8aoMKplv:ZTKLyIXH")
+}
+
+tasks.test {
+	useJUnitPlatform()
 }
 
 tasks.processResources {
