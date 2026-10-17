@@ -7211,7 +7211,7 @@
 							"easing": "easeOutSine"
 						}
 					}
-				},
+				}
 			},
 			"sound_effects": {
 				"0.0": {
