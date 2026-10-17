@@ -17,14 +17,24 @@ import net.minecraft.world.item.ItemStack;
 public class AnimationUtils {
    private static UUID animationSessionId;
    private static long animationControllerId = Long.MAX_VALUE;
+   /**
+    * 保存开始进食动画时的主手物品，用于动画锁定期间检测玩家是否更换了物品
+    */
    public static ItemStack temp;
    public static int lockedHotbarSlot = -1;
    public static boolean wasUsingCustomItem;
    public static boolean customUseReequipHandled;
+   /**
+    * 保存正在使用的自定义食物，例如持续按右键进食的物品。使用结束后用它播放 switch in 重新装备动画
+    */
    public static ItemStack customUseStack = ItemStack.EMPTY;
    public static boolean wasEatAnimationPlaying;
    private static boolean animationRequestPending;
    private static int animationRequestTicks;
+   /**
+    * 保存当前正在播放 switch in 的物品，用于禁用输入、检测动画是否结束，以及左键停止该动画
+    */
+   private static ItemStack switchInStack = ItemStack.EMPTY;
 
    public static boolean isAnimationLocked() {
       return temp != null && lockedHotbarSlot >= 0;
@@ -34,11 +44,28 @@ public class AnimationUtils {
       return animationRequestPending;
    }
 
+   public static boolean isInputLocked() {
+      return isAnimationLocked() || !switchInStack.isEmpty();
+   }
+
+   public static void beginSwitchInAnimation(ItemStack stack) {
+      if (stack != null && !stack.isEmpty()) {
+         switchInStack = stack.copy();
+      }
+   }
+
+   public static void updateSwitchInAnimation() {
+      if (!switchInStack.isEmpty() && !Empty.isClientAnimationPlaying(switchInStack, "switchin")) {
+         switchInStack = ItemStack.EMPTY;
+      }
+   }
+
    public static void beginAnimationSession(Minecraft mc) {
       animationSessionId = mc.player == null ? UUID.randomUUID() : ClientAnimationManager.beginSession(mc.player);
       animationControllerId = resolveControllerId(mc);
       animationRequestPending = true;
       animationRequestTicks = 0;
+      switchInStack = ItemStack.EMPTY;
       activateAnimationLock(mc);
    }
 
@@ -86,6 +113,9 @@ public class AnimationUtils {
       }
 
       Empty.stopEatAnimation(animationControllerId);
+      if (!switchInStack.isEmpty()) {
+         Empty.stopClientAnimation(switchInStack, "switchin");
+      }
       ClientSoundHandler.stopLocalSounds();
       if (Minecraft.getInstance().player != null) {
          ClientAnimationManager.clearSession(Minecraft.getInstance().player);
@@ -97,6 +127,7 @@ public class AnimationUtils {
       animationRequestPending = false;
       animationRequestTicks = 0;
       animationControllerId = Long.MAX_VALUE;
+      switchInStack = ItemStack.EMPTY;
       CameraRotationComposer.clearBlockbenchRotation();
    }
 
@@ -113,6 +144,7 @@ public class AnimationUtils {
       animationRequestTicks = 0;
       animationSessionId = null;
       animationControllerId = Long.MAX_VALUE;
+      switchInStack = ItemStack.EMPTY;
       CameraRotationComposer.clearBlockbenchRotation();
    }
 
@@ -167,6 +199,7 @@ public class AnimationUtils {
    public static void playCustomUseReequipAnimation(Minecraft mc, ItemStack stack) {
       if (stack != null && !stack.isEmpty()) {
          if (AnimationResourceChecker.hasAnimation(stack, "switchin")) {
+            beginSwitchInAnimation(stack);
             Empty.triggerClientAnimation(stack, "switchin");
          }
 

@@ -13,6 +13,7 @@
     "ItemRendererMixin",
     "KeyboardHandlerMixin",
     "MinecraftMixin",
+    "MouseHandlerMixin",
     "PlayerRendererMixin",
     "PunchyConfigMixin",
     "accessor.CameraAccessor"

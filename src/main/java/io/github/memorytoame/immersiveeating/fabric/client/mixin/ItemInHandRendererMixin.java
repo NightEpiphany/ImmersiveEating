@@ -9,6 +9,8 @@ import io.github.memorytoame.immersiveeating.fabric.common.content.item.Empty;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
+
+import io.github.memorytoame.immersiveeating.fabric.utils.AnimationUtils;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.Minecraft;
@@ -122,6 +124,9 @@ public abstract class ItemInHandRendererMixin {
    @Unique
    private static boolean food$trigger(ItemStack stack, String controllerName) {
       if (!stack.isEmpty() && FoodDefinitionManager.init_ItemList.contains(stack.getItem()) && food$hasAnimation(stack, controllerName)) {
+         if ("switchin".equals(controllerName)) {
+            AnimationUtils.beginSwitchInAnimation(stack);
+         }
          Empty.triggerClientAnimation(stack, controllerName);
          return true;
       }

@@ -122,6 +122,19 @@ public class Empty extends Item implements GeoItem {
       }
    }
 
+   public static void stopClientAnimation(ItemStack stack, String controllerName) {
+      if (stack != null && !stack.isEmpty()) {
+         long instanceId = resolveControllerId(stack);
+         AnimationController<?> controller = ModItems.EMPTY.getAnimatableInstanceCache()
+                 .getManagerForId(instanceId)
+                 .getAnimationControllers()
+                 .get(controllerName);
+         if (controller != null) {
+            controller.stopTriggeredAnimation();
+         }
+      }
+   }
+
    @Override
    public void registerControllers(AnimatableManager.@NonNull ControllerRegistrar controllers) {
       this.reg_controllers.add(this.createControl("eat"));
